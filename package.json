@@ -1,26 +1,33 @@
 {
-  "name": "o365admin",
+  "name": "o365-license-admin",
   "version": "0.0.1",
-  "description": "Office 365 License Admin Portal",
-  "productName": "Office 365 License Admin Portal",
-  "author": "somethingwentwell <46453511+somethingwentwell@users.noreply.github.com>",
+  "description": "o365 license admin",
+  "productName": "o365la",
+  "author": "Warren <wwwc@outlook.com>",
   "private": true,
   "scripts": {
-    "lint": "eslint --ext .js,.vue ./",
+    "lint": "eslint --ext .js,.ts,.vue ./",
+    "format": "prettier --write \"**/*.{js,ts,vue,scss,html,md,json}\" --ignore-path .gitignore",
     "test": "echo \"No test specified\" && exit 0"
   },
   "dependencies": {
     "@quasar/extras": "^1.0.0",
     "core-js": "^3.6.5",
-    "quasar": "^1.0.0"
+    "pinia": "^2.0.11",
+    "process": "^0.11.10",
+    "quasar": "^2.6.0",
+    "vue": "^3.0.0",
+    "vue-router": "^4.0.0"
   },
   "devDependencies": {
-    "@quasar/app": "^2.0.0",
-    "babel-eslint": "^10.0.1",
-    "eslint": "^7.21.0",
+    "@quasar/app-webpack": "^3.0.0",
+    "@types/node": "^12.20.55",
+    "@typescript-eslint/eslint-plugin": "^5.10.0",
+    "@typescript-eslint/parser": "^5.10.0",
+    "eslint": "^8.10.0",
     "eslint-config-prettier": "^8.1.0",
-    "eslint-plugin-vue": "^7.7.0",
-    "eslint-webpack-plugin": "^2.4.0"
+    "eslint-plugin-vue": "^9.0.0",
+    "prettier": "^2.5.1"
   },
   "browserslist": [
     "last 10 Chrome versions",
@@ -34,7 +41,7 @@
     "last 5 Opera versions"
   ],
   "engines": {
-    "node": ">= 10.18.1",
+    "node": ">= 12.22.1",
     "npm": ">= 6.13.4",
     "yarn": ">= 1.21.1"
   }

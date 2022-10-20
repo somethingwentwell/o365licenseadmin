@@ -20,6 +20,7 @@
         <q-scroll-area class="fit">
           <q-list padding class="menu-list">
             <q-item clickable v-ripple @click="$router.replace('/users')">
+            
               <q-item-section avatar>
                 <q-icon name="people" />
               </q-item-section>
@@ -29,7 +30,7 @@
               </q-item-section>
             </q-item>
 
-            <q-item clickable v-ripple @click="$router.replace('/licenses')">
+            <q-item clickable v-ripple @click="$router.replace('/skus')">
               <q-item-section avatar>
                 <q-icon name="subscriptions" />
               </q-item-section>
