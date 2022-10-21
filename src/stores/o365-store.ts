@@ -19,6 +19,12 @@ type customUser = {
   jobTitle: string,
   mail: string,
   officeLocation: string,
+  signInActivity: {
+    lastSignInDateTime: string,
+    lastSignInRequestId: string,
+    lastNonInteractiveSignInDateTime: string,
+    lastNonInteractiveSignInRequestId: string
+  }
   assignedLicenses: [
     {
         disabledPlans: Array<string>,
@@ -58,6 +64,7 @@ type log = {
   PartitionKey: string,
   RowKey: string,
   Timestamp: string,
+  UserId: string,
   success: boolean,
   RequestBody: string,
   Result: string
@@ -67,7 +74,6 @@ export const useO365Store = defineStore('o365', {
   state: () => ({
     storage: {
       accountName: 'mvpkso3658b7d',
-      sasToken: 'sv=2021-06-08&ss=bfqt&srt=sco&sp=rwdlacupiyx&se=2022-11-29T19:40:14Z&st=2022-10-18T11:40:14Z&spr=https&sig=We%2FifJ8ZV%2BDKGbnzHdF53pML5RFQVhbY6MaqpPdJvf0%3D',
       authUrl: 'https://kaishingo365.azurewebsites.net/.auth/login/aad?post_login_redirect_url=/api/GetAccessTokenAuth?url='
     },
     users: [] as user[],
@@ -117,6 +123,9 @@ export const useO365Store = defineStore('o365', {
     //   Loading.hide()
     //   return result.access_token;
     // },
+    setSasToken(token) {
+      this.storage.sas_token = token;
+    },
     async getGraphUsers() {
       Loading.show();
       const myHeaders = new Headers();
@@ -144,7 +153,7 @@ export const useO365Store = defineStore('o365', {
         method: 'GET',
         headers: myHeaders,
       };
-      const response = await fetch('https://graph.microsoft.com/v1.0/users?$select=id,displayName,mail,jobTitle,officeLocation,assignedLicenses', requestOptions);
+      const response = await fetch('https://graph.microsoft.com/beta/users?$select=id,displayName,signInActivity,mail,businessPhones,jobTitle,officeLocation,assignedLicenses', requestOptions);
       const result = await response.json();
 
       this.customUsers = result.value;
@@ -204,11 +213,12 @@ export const useO365Store = defineStore('o365', {
       const response = await fetch(`https://graph.microsoft.com/v1.0/users/${userId}/assignLicense`, requestOptions);
       const message = await response.text();
       if (!response.ok) {
-        this.logApiResult(raw, message, false, 'removeUserLicense');
+        this.logApiResult(userId, raw, message, false, 'removeUserLicense');
         alert(message);
       }
       else {
-        this.logApiResult(raw, message, true, 'removeUserLicense');
+        this.logApiResult(userId, raw, message, true, 'removeUserLicense');
+        this.getGraphCustomUsers();
       }
       Loading.hide();
       return;
@@ -238,16 +248,17 @@ export const useO365Store = defineStore('o365', {
       const response = await fetch(`https://graph.microsoft.com/v1.0/users/${userId}/assignLicense`, requestOptions);
       const message = await response.text();
       if (!response.ok) {
-        this.logApiResult(raw, message, false, 'addUserLicense');
+        this.logApiResult(userId, raw, message, false, 'addUserLicense');
         alert(message);
       }
       else {
-        this.logApiResult(raw, message, true, 'addUserLicense');
+        this.logApiResult(userId, raw, message, true, 'addUserLicense');
+        this.getGraphCustomUsers();
       }
       Loading.hide();
       return;
     },
-    async logApiResult(requestBody: string, result: string, success: boolean, partition: string) {
+    async logApiResult(userId: string, requestBody: string, result: string, success: boolean, partition: string) {
       Loading.show();
       const myHeaders = new Headers();
       myHeaders.append('Content-Type', 'application/json');
@@ -256,6 +267,7 @@ export const useO365Store = defineStore('o365', {
         'RowKey': partition + Date.now(),
         'PartitionKey': partition,
         'success': success,
+        'UserId': userId,
         'RequestBody': requestBody,
         'Result': result
       });
@@ -264,7 +276,7 @@ export const useO365Store = defineStore('o365', {
         headers: myHeaders,
         body: raw
       };
-      await fetch(`https://${this.storage.accountName}.table.core.windows.net/logs?${this.storage.sasToken}`, requestOptions);
+      await fetch(`https://${this.storage.accountName}.table.core.windows.net/logs?${localStorage.getItem('sas_token')}`, requestOptions);
       Loading.hide();
       return;
     },
@@ -277,7 +289,7 @@ export const useO365Store = defineStore('o365', {
         method: 'GET',
         headers: myHeaders,
       };
-      const response = await fetch(`https://${this.storage.accountName}.table.core.windows.net/logs?$top=50&${this.storage.sasToken}`, requestOptions);
+      const response = await fetch(`https://${this.storage.accountName}.table.core.windows.net/logs?$top=50&${localStorage.getItem('sas_token')}`, requestOptions);
       const message = await response.json();
       this.logs = message.value;
       Loading.hide();
@@ -292,7 +304,7 @@ export const useO365Store = defineStore('o365', {
         method: 'GET',
         headers: myHeaders,
       };
-      const response = await fetch(`https://${this.storage.accountName}.table.core.windows.net/config?${this.storage.sasToken}`, requestOptions);
+      const response = await fetch(`https://${this.storage.accountName}.table.core.windows.net/config?${localStorage.getItem('sas_token')}`, requestOptions);
       const message = await response.json();
       this.config = message.value[0];
       Loading.hide();
@@ -317,24 +329,23 @@ export const useO365Store = defineStore('o365', {
       };
 
       const key = 'automation';
-      await fetch(`https://${this.storage.accountName}.table.core.windows.net/config(PartitionKey='${key}', RowKey='${key}')?${this.storage.sasToken}`, requestOptions);
+      await fetch(`https://${this.storage.accountName}.table.core.windows.net/config(PartitionKey='${key}', RowKey='${key}')?${localStorage.getItem('sas_token')}`, requestOptions);
       Loading.hide();
       return;
     },
     auth() {
       const urlParams = new URLSearchParams(window.location.search);
-
       const redirectAuth = () => {
-        console.log(this.storage.authUrl + window.location.href)
         localStorage.setItem('href', window.location.href);
         window.location.replace(this.storage.authUrl + window.location.href);
       }
 
       const setToken = () => {
         const data = JSON.parse(atob(urlParams.get('data')));
-        localStorage.setItem('token', data.access_token);
+        localStorage.setItem('token', data.access_token.access_token);
         localStorage.setItem('date', Date.now().toString());
-        localStorage.setItem('expiry', data.expires_in);
+        localStorage.setItem('expiry', data.access_token.expires_in);
+        localStorage.setItem('sas_token', data.sas_token);
         window.location.replace(localStorage.getItem('href'));
         localStorage.removeItem('href');
       }
@@ -343,7 +354,6 @@ export const useO365Store = defineStore('o365', {
       if (localStorage.getItem('token') == null) {
         if (urlParams.has('data')) {
           setToken();
-          
         }
         else {
           redirectAuth();

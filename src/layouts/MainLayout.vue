@@ -8,7 +8,7 @@
 
         <q-toolbar-title>
           <q-avatar>
-            <img src="https://media-exp1.licdn.com/dms/image/C510BAQGUAzfaTLruTg/company-logo_200_200/0/1523956364057?e=2159024400&v=beta&t=oQf4AzoBjcgemSxr6o_VWFXGy0aV_110mJWNkw5nQ4M">
+            <img src="icons/favicon-96x96.png">
           </q-avatar>
           Kai Shing O365 Licenses Management
         </q-toolbar-title>

@@ -6,7 +6,15 @@
       row-key="id"
       :columns="logColumns"
       :rows-per-page-options="[10, 20, 30]"
-    />
+    >
+      <template v-slot:top-right>
+        <q-input borderless dense debounce="300" v-model="filter" placeholder="Search">
+          <template v-slot:append>
+            <q-icon name="search" />
+          </template>
+        </q-input>
+      </template>
+    </q-table>
   </div>
 </template>
 
@@ -14,7 +22,7 @@
 import { defineComponent } from 'vue'
 // import { storeToRefs } from 'pinia';
 import { useO365Store } from '../stores/o365-store';
-
+import { ref } from 'vue';
 
 const logColumns = [
   // {
@@ -42,25 +50,19 @@ const logColumns = [
     sortable: true
   },
   {
+    name: 'UserId',
+    required: true,
+    label: 'UserId',
+    align: 'left',
+    field: 'UserId',
+    sortable: true
+  },
+  {
     name: 'Success',
     required: true,
     label: 'Success',
     align: 'left',
     field: 'success',
-    sortable: true
-  },
-  {
-    name: 'Error Message',
-    required: true,
-    label: 'Error Message',
-    align: 'left',
-    field: row => {
-      let obj = JSON.parse(row.Result);
-      if (obj['error']) {
-        return obj['error']['message'];
-      }
-      return '';
-    },
     sortable: true
   },
   {
@@ -70,6 +72,19 @@ const logColumns = [
     align: 'left',
     field: 'RequestBody',
     sortable: true
+  },
+  {
+    name: 'Result',
+    required: true,
+    label: 'Result',
+    align: 'left',
+    field: row => {
+      if (row.Result) {
+        return row.Result;
+      }
+      return '';
+    },
+    sortable: true
   }
 ]
 
@@ -77,12 +92,12 @@ export default defineComponent({
   setup() {
 
     const o365 = useO365Store();
-    o365.auth();
     o365.getLogs();
     return {
       // Option 1: return the store directly and couple it in the template
       o365,
-      logColumns
+      logColumns,
+      filter: ref(''),
 
     };
   },

@@ -6,16 +6,8 @@
       row-key="id"
       :columns="userColumns"
       :rows-per-page-options="[10, 20, 30]"
+      :filter="filter"
     >
-      <template v-slot:top-right>
-        <q-btn
-          color="primary"
-          icon-right="archive"
-          label="Export to csv"
-          no-caps
-          @click="exportCsv"
-        />
-      </template>
       <template v-slot:top-left>
       <q-uploader
         style="max-width: 300px"
@@ -25,6 +17,21 @@
         label="Upload csv"
         accept=".csv"
       />
+        <q-btn
+          style="width: 300px"
+          color="primary"
+          icon-right="archive"
+          label="Export to csv"
+          no-caps
+          @click="exportCsv"
+        />
+      </template>
+      <template v-slot:top-right>
+        <q-input borderless dense debounce="300" v-model="filter" placeholder="Search">
+          <template v-slot:append>
+            <q-icon name="search" />
+          </template>
+        </q-input>
       </template>
       <template v-slot:header="props">
         <q-tr :props="props">
@@ -143,6 +150,24 @@ const userColumns = [
     sortable: true
   },
   {
+    name: 'Mail',
+    required: true,
+    label: 'Mail',
+    align: 'left',
+    field: 'mail',
+    sortable: true
+  },
+  {
+    name: 'Last Sign In',
+    required: true,
+    label: 'Last Sign In',
+    align: 'left',
+    field: row => {
+      return row.signInActivity ? new Date(row.signInActivity.lastSignInDateTime).toLocaleString() : '';
+    },
+    sortable: true
+  },
+  {
     name: 'Job Title',
     required: true,
     label: 'Job Title',
@@ -151,14 +176,6 @@ const userColumns = [
     sortable: true
   },
   {
-    name: 'Mail',
-    required: true,
-    label: 'Mail',
-    align: 'left',
-    field: 'mail',
-    sortable: true
-  },
- {
     name: 'Office Location',
     required: true,
     label: 'Office Location',
@@ -206,7 +223,6 @@ let setCurrentUser = (userId) => {
 
 let removeLicense = (row) => {
   o365.removeUserLicense(o365.currentUser.id, row.skuId);
-  o365.getGraphCustomUsers();
 }
 
 let addLicense = () => {
@@ -215,7 +231,6 @@ let addLicense = () => {
     formattedGroup.push(element);
   });
   o365.addUserLicense(o365.currentUser.id, formattedGroup);
-  o365.getGraphCustomUsers();
 }
 
 let exportCsv = () => {
@@ -230,7 +245,13 @@ let exportCsv = () => {
     ...items.map(row => header.map(fieldName => {
       if (fieldName === 'assignedLicenses') {
         //join the array of objects into a string with comma
-        return `"${row[fieldName].map((license) => license.skuId).join(',')}"`;
+        return `${row[fieldName].map((license) => license.skuId).join(';')}`;
+      } else if (fieldName === 'signInActivity') {
+        if (row[fieldName]) {
+          return `"${new Date(row[fieldName].lastSignInDateTime)}"`;
+        } else {
+          return '';
+        }
       } else {
         return JSON.stringify(row[fieldName], replacer)
       }
@@ -265,7 +286,8 @@ export default defineComponent({
       group,
       options,
       exportCsv,
-      blobUrl: `https://${o365.storage.accountName}.blob.core.windows.net/users/users.csv?${o365.storage.sasToken}`
+      blobUrl: `https://${o365.storage.accountName}.blob.core.windows.net/users/users.csv?${localStorage.getItem('sas_token')}`,
+      filter: ref(''),
 
     };
   },
